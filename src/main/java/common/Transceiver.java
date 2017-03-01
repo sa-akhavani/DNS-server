@@ -33,7 +33,7 @@ public class Transceiver {
         String response;
         while ((response = serverReply.readLine()) != null) {
             res+= response;
-            res+= '\n';
+//            res+= '\n';
 //            System.out.println("data from server: " + response);
             if(!serverReply.ready())
                 break;
