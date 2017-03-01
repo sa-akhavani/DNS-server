@@ -66,7 +66,6 @@ public class UserThread extends Thread {
                 roots) {
             System.out.println("sending: " + jo.toString() + " to ip:" + root.ip + ":" + root.port);
             Transceiver agent = new Transceiver(root.ip, root.port);
-            System.out.println(jo.toString());
             agent.send(jo.toString() + '\n');
         }
         return response;

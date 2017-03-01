@@ -1,5 +1,6 @@
 package agent;
 
+import org.joda.time.DateTime;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -42,7 +43,25 @@ public class RequestHandler {
     JSONObject createSearchJson() throws JSONException {
         JSONObject jo = new JSONObject();
         jo.put("domain", request);
+        jo.put("hour", getCurrentHourType());
+        jo.put("type", "search");
         return jo;
     }
 
+    private String getCurrentHourType() {
+        DateTime dt = new DateTime();
+        int hour = dt.getHourOfDay();
+        String hourType = "noon";
+        if (hour >= 1 && hour <= 6)
+            hourType = "dawn";
+        else if (hour > 6 && hour <= 11)
+            hourType = "morning";
+        else if (hour > 11 && hour <= 15)
+            hourType = "noon";
+        else if (hour > 15 && hour <= 19)
+            hourType = "afternoon";
+        else if (hour > 19 && hour <= 0)
+            hourType = "night";
+        return hourType;
+    }
 }
