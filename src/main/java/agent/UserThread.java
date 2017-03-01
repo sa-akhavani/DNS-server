@@ -1,9 +1,9 @@
 package agent;
 
+import common.Server;
 import common.Transceiver;
 import org.json.JSONException;
 import org.json.JSONObject;
-import root.RootServer;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -15,12 +15,12 @@ import java.util.ArrayList;
  * Created by ali on 2/28/17.
  */
 public class UserThread extends Thread {
-    private ArrayList<RootServer> roots;
+    private ArrayList<Server> roots;
     private Socket socket;
     private RequestHandler reqHandler;
 
 
-    UserThread(Socket socket, ArrayList<RootServer> roots) {
+    UserThread(Socket socket, ArrayList<Server> roots) {
         this.socket = socket;
         reqHandler = new RequestHandler();
         this.roots = roots;
@@ -62,7 +62,7 @@ public class UserThread extends Thread {
 
     private String handleSearch(JSONObject jo) throws IOException {
         String response = "";
-        for (RootServer root :
+        for (Server root :
                 roots) {
             System.out.println("sending: " + jo.toString() + " to ip:" + root.ip + ":" + root.port);
             Transceiver agent = new Transceiver(root.ip, root.port);

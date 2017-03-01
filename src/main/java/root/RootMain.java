@@ -9,7 +9,7 @@ import java.net.Socket;
  */
 public class RootMain {
     public static void main(String[] args) throws IOException {
-        ServerSocket myServer = new ServerSocket(12344);
+        ServerSocket myServer = new ServerSocket(12340);
         while (true) {
             Socket clientSocket = myServer.accept();
             RootThread rt = new RootThread(clientSocket);
