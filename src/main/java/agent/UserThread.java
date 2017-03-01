@@ -40,6 +40,7 @@ public class UserThread extends Thread {
                             System.out.println("Search!");
                             JSONObject jo = reqHandler.createSearchJson();
                             String response = handleSearch(jo);
+                            System.out.println(response);
                             break;
                         case "add":
                             System.out.println("Add");
@@ -67,6 +68,9 @@ public class UserThread extends Thread {
             System.out.println("sending: " + jo.toString() + " to ip:" + root.ip + ":" + root.port);
             Transceiver agent = new Transceiver(root.ip, root.port);
             agent.send(jo.toString() + '\n');
+            response = agent.receive();
+            if (response != null)
+                break;
         }
         return response;
     }

@@ -16,6 +16,9 @@ public class Transceiver {
         socket = new Socket(ip, port);
     }
 
+    public Transceiver(Socket s) {
+        this.socket = s;
+    }
 
     public void send(String data) throws IOException {
         PrintWriter output = new PrintWriter(socket.getOutputStream());

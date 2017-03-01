@@ -15,10 +15,11 @@ import java.util.ArrayList;
  */
 public class TLDMain {
     public static void main(String[] args) throws IOException {
+        ArrayList<Server> websites = new ArrayList<>();
         ServerSocket myServer = new ServerSocket(12330);
         while (true) {
             Socket clientSocket = myServer.accept();
-            RootThread rt = new RootThread(clientSocket);
+            TLDThread rt = new TLDThread(clientSocket, websites);
             rt.start();
         }
     }
