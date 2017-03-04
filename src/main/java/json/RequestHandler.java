@@ -1,4 +1,4 @@
-package agent;
+package json;
 
 import org.joda.time.DateTime;
 import org.json.JSONException;
@@ -12,9 +12,6 @@ public class RequestHandler {
     private String request;
     private String type;
 
-    public RequestHandler(String searchType) {
-        this.searchType = searchType;
-    }
 
     String getRequest() {
         return request;
@@ -28,24 +25,31 @@ public class RequestHandler {
         this.type = type;
     }
 
-    String parseType(String line) {
+    public String getSearchType() {
+        return searchType;
+    }
+
+    public String parseType(String line) {
         this.request = line;
         String[] args = request.split("\\s");
-        if (args.length == 1) {
-            type = "search";
-            return "search";
-        } else if (args[0].equals("add")) {
+
+        if (args[0].equals("add")) {
             type = "add";
             return "add";
         } else if (args[0].equals("update")) {
             type = "update";
             return "update";
+        } else if (args[0].equals("search") && args.length == 3) {
+            type = "search";
+            searchType = args[2];
+            this.request = args[1];
+            return "search";
         }
         type = "wrong";
         return "wrong";
     }
 
-    JSONObject createSearchJson() throws JSONException {
+    public JSONObject createSearchJson() throws JSONException {
         JSONObject jo = new JSONObject();
         jo.put("domain", request);
         jo.put("hour", getCurrentHourType());

@@ -2,7 +2,9 @@ package root;
 
 import common.Server;
 import common.Transceiver;
+import json.Response;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -40,14 +42,13 @@ public class RootThread extends Thread {
                             String tldName = jsonHandler.getRelatedTld();
                             String tldIp = findRelatedTld(tldName);
                             if (tldIp == null) {
-                                // TODO: 3/1/17 Not Found!
+                                sendResultToAgent(new Response("", true, false).getRespObject());
                             } else if (jsonHandler.getSearchType().equals("iterative")) {
                                 System.out.println(tldIp);
-                                sendResultToAgent(tldIp);
-                                // TODO: 3/1/17 need to send a json that says it is iterative
+                                sendResultToAgent(new Response(tldIp, false, true).getRespObject());
                             } else {
-                                String domainIp = askTldForDomainIp(tldIp, line);
-                                System.out.println("domain name:" + domainIp);
+                                JSONObject domainIp = askTldForDomainIp(tldIp, line); //maybe null
+                                System.out.println("domain name:" + domainIp.toString());
                                 sendResultToAgent(domainIp);
                             }
 
@@ -71,15 +72,19 @@ public class RootThread extends Thread {
         System.out.println("Thread Ended!");
     }
 
-    private String askTldForDomainIp(String tldPort, String messeage) throws IOException {
+    private JSONObject askTldForDomainIp(String tldPort, String message) throws IOException {
         Transceiver t = new Transceiver("localhost" , Integer.parseInt(tldPort));
-        t.send(messeage+ '\n');
-        return t.receive();
+        t.send(message + '\n');
+        try {
+            return new JSONObject(t.receive());
+        } catch (JSONException e) {
+            return null;
+        }
     }
 
-    private void sendResultToAgent(String agentIP) throws IOException {
+    private void sendResultToAgent(JSONObject agentIP) throws IOException {
         Transceiver t = new Transceiver(this.socket);
-        t.send(agentIP + '\n');
+        t.send(agentIP.toString() + '\n');
     }
 
     private String findRelatedTld(String tldName) {

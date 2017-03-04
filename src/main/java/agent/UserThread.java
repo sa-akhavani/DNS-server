@@ -2,6 +2,8 @@ package agent;
 
 import common.Server;
 import common.Transceiver;
+import json.RequestHandler;
+import json.Response;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -18,14 +20,12 @@ public class UserThread extends Thread {
     private ArrayList<Server> roots;
     private Socket socket;
     private RequestHandler reqHandler;
-    private String searchType;
 
 
-    UserThread(Socket socket, ArrayList<Server> roots, String searchType) {
+    UserThread(Socket socket, ArrayList<Server> roots) {
         this.socket = socket;
-        reqHandler = new RequestHandler(searchType);
+        this.reqHandler = new RequestHandler();
         this.roots = roots;
-        this.searchType = searchType;
     }
 
     public void run() {
@@ -40,8 +40,9 @@ public class UserThread extends Thread {
                     switch (type) {
                         case "search":
                             JSONObject jo = reqHandler.createSearchJson();
-                            String response = handleSearch(jo);
-                            sendResultToUser(response);
+                            System.out.println(jo.toString());
+                            Response response = handleSearch(jo);
+                            sendResultToUser(response.getRespObject());
                             System.out.println(response);
                             break;
                         case "add":
@@ -63,45 +64,54 @@ public class UserThread extends Thread {
         System.out.println("Thread Ended!");
     }
 
-    private String handleSearch(JSONObject jo) throws IOException {
-        if(searchType.equals("iterative"))
-            return iterativeSearch(jo);
-        else
-            return defaultSearch(jo);
-    }
+    private Response handleSearch(JSONObject jo) throws IOException, JSONException {
+        Response r = null;
+        for (Server root: roots) {
+            if(reqHandler.getSearchType().equals("iterative"))
+                r = iterativeSearch(jo, root.port);
+            else
+                r =  defaultSearch(jo, root.port);
 
-    private String defaultSearch(JSONObject jo) throws IOException {
-        System.out.println("recursive search!!!");
-        String response = "";
-        for (Server root :
-                roots) {
-            Transceiver agent = new Transceiver(root.ip, root.port);
-            agent.send(jo.toString() + '\n');
-            response = agent.receive();
-            if(response.equals(""))
+            if(r != null && r.isFinal())
                 break;
         }
 
-        return response;
+        return r;
     }
 
-    private String iterativeSearch(JSONObject jo) throws IOException {
+    private Response defaultSearch(JSONObject jo , int port) throws IOException {
+        System.out.println("recursive search!!!");
+        String response = "";
+        Transceiver agent = new Transceiver("localhost", port);
+        agent.send(jo.toString() + '\n');
+        response = agent.receive();
+
+        try {
+            return new Response(response);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private Response iterativeSearch(JSONObject jo , int port) throws IOException, JSONException {
         System.out.println("iterative search!!!");
+        String response = "";
+        Response resp = defaultSearch(jo, port);
 
-        String response = defaultSearch(jo);
-
-        if(!response.equals("")) {
-            System.out.println("hahaha");
-            Transceiver tld = new Transceiver("localhost", Integer.parseInt(response));
-            tld.send(jo.toString() + '\n');
-            response = tld.receive();
+        if(resp != null) {
+            if(!resp.isFinal()) {
+                return iterativeSearch(jo, Integer.parseInt(resp.getResponse()));
+            } else if(!resp.isFound()) {
+                return new Response("",true, false);
+            }
         }
 
-        return response;
+        return resp;
     }
 
-    private void sendResultToUser(String websiteIP) throws IOException {
+    private void sendResultToUser(JSONObject response) throws IOException { //todo: not a good format
         Transceiver t = new Transceiver(this.socket);
-        t.send(websiteIP + '\n');
+        t.send(response.toString() + '\n');
     }
 }

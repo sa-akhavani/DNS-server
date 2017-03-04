@@ -2,7 +2,9 @@ package tld;
 
 import common.Server;
 import common.Transceiver;
+import json.Response;
 import org.json.JSONException;
+import org.json.JSONObject;
 import root.JsonHandler;
 
 import java.io.BufferedReader;
@@ -40,12 +42,10 @@ public class TLDThread extends Thread {
                             String siteName = jsonHandler.getDomain();
                             String websiteIP = findWebsiteIP(siteName);
                             if (websiteIP == null) {
-                                // TODO: 3/1/17 Not Found!
+                                sendResultToAgent(new Response("", true, false).getRespObject());
                             } else {
                                 System.out.println("sending back ip" + websiteIP);
-//                                Handle Iterative Root Server
-                                sendResultToAgent(websiteIP);
-                                // TODO: 3/1/17 need to send a json that says it is iterative
+                                sendResultToAgent(new Response(websiteIP, true, true).getRespObject());
                             }
 
                             break;
@@ -79,9 +79,9 @@ public class TLDThread extends Thread {
         return null;
     }
 
-    private void sendResultToAgent(String resultIP) throws IOException {
+    private void sendResultToAgent(JSONObject j) throws IOException {
         Transceiver t = new Transceiver(this.socket);
-        t.send(resultIP + '\n');
+        t.send(j.toString() + '\n');
     }
 
 }
