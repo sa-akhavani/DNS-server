@@ -43,12 +43,12 @@ public class RootThread extends Thread {
                                 // TODO: 3/1/17 Not Found!
                             } else if (jsonHandler.getSearchType().equals("iterative")) {
                                 System.out.println(tldIp);
-//                                Handle Iterative Root Server
                                 sendResultToAgent(tldIp);
                                 // TODO: 3/1/17 need to send a json that says it is iterative
                             } else {
-//                                Handle Recursive Root Server
-                                String domainIp = askTldForDomainIp();
+                                String domainIp = askTldForDomainIp(tldIp, line);
+                                System.out.println("domain name:" + domainIp);
+                                sendResultToAgent(domainIp);
                             }
 
                             break;
@@ -71,13 +71,15 @@ public class RootThread extends Thread {
         System.out.println("Thread Ended!");
     }
 
-    private String askTldForDomainIp() {
-        return "";
+    private String askTldForDomainIp(String tldPort, String messeage) throws IOException {
+        Transceiver t = new Transceiver("localhost" , Integer.parseInt(tldPort));
+        t.send(messeage+ '\n');
+        return t.receive();
     }
 
-    private void sendResultToAgent(String tldIp) throws IOException {
+    private void sendResultToAgent(String agentIP) throws IOException {
         Transceiver t = new Transceiver(this.socket);
-        t.send(tldIp + '\n');
+        t.send(agentIP + '\n');
     }
 
     private String findRelatedTld(String tldName) {
