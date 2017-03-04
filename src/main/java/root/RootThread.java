@@ -18,12 +18,10 @@ public class RootThread extends Thread {
     private ArrayList<Server> tlds;
     private Socket socket;
     private JsonHandler jsonHandler;
-    private String searchType;
 
-    public RootThread(Socket socket, ArrayList<Server> tlds, String searchType) {
-        this.socket = socket;
+    public RootThread(Socket clientSocket, ArrayList<Server> tlds) {
+        this.socket = clientSocket;
         this.tlds = tlds;
-        this.searchType = searchType;
         jsonHandler = new JsonHandler();
     }
 
@@ -35,6 +33,7 @@ public class RootThread extends Thread {
                 BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 while ((line = br.readLine()) != null) {
                     String type = jsonHandler.parseCommand(line);
+                    System.out.println("searchType: " + jsonHandler.getSearchType());
                     switch (type) {
                         case "search":
                             System.out.println("Search!");
@@ -42,7 +41,8 @@ public class RootThread extends Thread {
                             String tldIp = findRelatedTld(tldName);
                             if (tldIp == null) {
                                 // TODO: 3/1/17 Not Found!
-                            } else if (searchType.equals("iterative")) {
+                            } else if (jsonHandler.getSearchType().equals("iterative")) {
+                                System.out.println(tldIp);
 //                                Handle Iterative Root Server
                                 sendResultToAgent(tldIp);
                                 // TODO: 3/1/17 need to send a json that says it is iterative

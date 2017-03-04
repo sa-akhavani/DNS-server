@@ -14,14 +14,13 @@ import java.util.ArrayList;
  */
 public class RootMain {
     public static void main(String[] args) throws IOException {
-        String searchType = "iterative";
         ArrayList<Server> tlds = new ArrayList<>();
         ServerSocket myServer = new ServerSocket(12340);
         configAgent("./resources/root1.tlds", tlds);
 
         while (true) {
             Socket clientSocket = myServer.accept();
-            RootThread rt = new RootThread(clientSocket, tlds, searchType);
+            RootThread rt = new RootThread(clientSocket, tlds);
             rt.start();
         }
     }

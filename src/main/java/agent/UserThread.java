@@ -18,12 +18,14 @@ public class UserThread extends Thread {
     private ArrayList<Server> roots;
     private Socket socket;
     private RequestHandler reqHandler;
+    private String searchType;
 
 
-    UserThread(Socket socket, ArrayList<Server> roots) {
+    UserThread(Socket socket, ArrayList<Server> roots, String searchType) {
         this.socket = socket;
-        reqHandler = new RequestHandler();
+        reqHandler = new RequestHandler(searchType);
         this.roots = roots;
+        this.searchType = searchType;
     }
 
     public void run() {
@@ -37,9 +39,9 @@ public class UserThread extends Thread {
                     String type = reqHandler.parseType(line);
                     switch (type) {
                         case "search":
-                            System.out.println("Search!");
                             JSONObject jo = reqHandler.createSearchJson();
                             String response = handleSearch(jo);
+                            sendResultToUser(response);
                             System.out.println(response);
                             break;
                         case "add":
@@ -69,9 +71,21 @@ public class UserThread extends Thread {
             Transceiver agent = new Transceiver(root.ip, root.port);
             agent.send(jo.toString() + '\n');
             response = agent.receive();
-            if (response != null)
-                break;
+            System.out.println("Respose: " + response);
+
+            if(!response.equals("")) {
+                System.out.println("tld port: " + response);
+                Transceiver tld = new Transceiver("localhost", Integer.parseInt(response));
+                tld.send(jo.toString() + '\n');
+                response = tld.receive();
+                System.out.println("second Resposne: " + response);
+            }
         }
         return response;
+    }
+
+    private void sendResultToUser(String websiteIP) throws IOException {
+        Transceiver t = new Transceiver(this.socket);
+        t.send(websiteIP + '\n');
     }
 }

@@ -8,8 +8,13 @@ import org.json.JSONObject;
  * Created by ali on 2/28/17.
  */
 public class RequestHandler {
+    private String searchType;
     private String request;
     private String type;
+
+    public RequestHandler(String searchType) {
+        this.searchType = searchType;
+    }
 
     String getRequest() {
         return request;
@@ -45,6 +50,7 @@ public class RequestHandler {
         jo.put("domain", request);
         jo.put("hour", getCurrentHourType());
         jo.put("type", "search");
+        jo.put("searchType", searchType);
         return jo;
     }
 
