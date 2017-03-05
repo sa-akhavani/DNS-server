@@ -20,12 +20,14 @@ public class UserThread extends Thread {
     private ArrayList<Server> roots;
     private Socket socket;
     private RequestHandler reqHandler;
+    private ServerRepository serverRepository;
 
 
     UserThread(Socket socket, ArrayList<Server> roots) {
         this.socket = socket;
         this.reqHandler = new RequestHandler();
         this.roots = roots;
+        this.serverRepository = ServerRepository.getRepository();
     }
 
     public void run() {
@@ -39,10 +41,8 @@ public class UserThread extends Thread {
                     String type = reqHandler.parseType(line);
                     switch (type) {
                         case "search":
-                            JSONObject jo = reqHandler.createSearchJson();
-                            System.out.println(jo.toString());
-                            Response response = handleSearch(jo);
-                            sendResultToUser(response.getRespObject());
+                            Response response = handleSearch(reqHandler);
+                            sendResultToUser(response);
                             System.out.println(response);
                             break;
                         case "add":
@@ -64,8 +64,12 @@ public class UserThread extends Thread {
         System.out.println("Thread Ended!");
     }
 
-    private Response handleSearch(JSONObject jo) throws IOException, JSONException {
-        Response r = null;
+    private Response handleSearch(RequestHandler req) throws IOException, JSONException {
+        Response r = checkCatchedRepository(req);
+        if(r != null)
+            return r;
+
+        JSONObject jo = reqHandler.createSearchJson();
         for (Server root: roots) {
             if(reqHandler.getSearchType().equals("iterative"))
                 r = iterativeSearch(jo, root.port);
@@ -75,8 +79,18 @@ public class UserThread extends Thread {
             if(r != null && r.isFinal())
                 break;
         }
+        if(r != null && r.isFound())
+            serverRepository.store(new Server(req.getRequest(), r.getResponse(), 0, r.getValidTime()));
 
         return r;
+    }
+
+    private Response checkCatchedRepository(RequestHandler req) throws JSONException {
+        if(serverRepository.contains(req.getRequest())) {
+            Server s = serverRepository.get(req.getRequest());
+            return new Response(s.ip, true, true, s.validTime);
+        } else
+            return null;
     }
 
     private Response defaultSearch(JSONObject jo , int port) throws IOException {
@@ -103,15 +117,18 @@ public class UserThread extends Thread {
             if(!resp.isFinal()) {
                 return iterativeSearch(jo, Integer.parseInt(resp.getResponse()));
             } else if(!resp.isFound()) {
-                return new Response("",true, false);
+                return new Response("",true, false,0);
             }
         }
 
         return resp;
     }
 
-    private void sendResultToUser(JSONObject response) throws IOException { //todo: not a good format
+    private void sendResultToUser(Response response) throws IOException {
         Transceiver t = new Transceiver(this.socket);
-        t.send(response.toString() + '\n');
+        if(response.isFound())
+            t.send(response.getResponse() + '\n');
+        else
+            t.send("Not Found!\n");
     }
 }

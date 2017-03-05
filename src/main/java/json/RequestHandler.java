@@ -13,7 +13,7 @@ public class RequestHandler {
     private String type;
 
 
-    String getRequest() {
+    public String getRequest() {
         return request;
     }
 

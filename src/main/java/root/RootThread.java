@@ -42,10 +42,10 @@ public class RootThread extends Thread {
                             String tldName = jsonHandler.getRelatedTld();
                             String tldIp = findRelatedTld(tldName);
                             if (tldIp == null) {
-                                sendResultToAgent(new Response("", true, false).getRespObject());
+                                sendResultToAgent(new Response("", true, false, 0).getRespObject());
                             } else if (jsonHandler.getSearchType().equals("iterative")) {
                                 System.out.println(tldIp);
-                                sendResultToAgent(new Response(tldIp, false, true).getRespObject());
+                                sendResultToAgent(new Response(tldIp, false, true, 0).getRespObject());
                             } else {
                                 JSONObject domainIp = askTldForDomainIp(tldIp, line); //maybe null
                                 System.out.println("domain name:" + domainIp.toString());
@@ -72,6 +72,11 @@ public class RootThread extends Thread {
         System.out.println("Thread Ended!");
     }
 
+    private void sendResultToAgent(JSONObject agentIP) throws IOException {
+        Transceiver t = new Transceiver(this.socket);
+        t.send(agentIP.toString() + '\n');
+    }
+
     private JSONObject askTldForDomainIp(String tldPort, String message) throws IOException {
         Transceiver t = new Transceiver("localhost" , Integer.parseInt(tldPort));
         t.send(message + '\n');
@@ -82,15 +87,11 @@ public class RootThread extends Thread {
         }
     }
 
-    private void sendResultToAgent(JSONObject agentIP) throws IOException {
-        Transceiver t = new Transceiver(this.socket);
-        t.send(agentIP.toString() + '\n');
-    }
-
     private String findRelatedTld(String tldName) {
         for (Server s :
                 tlds) {
             if (Objects.equals(s.name, tldName)) {
+                System.out.println("tldName: " + tldName + "tldFound: " + s.name + " tldPort: " + s.ip);
                 return Integer.toString(s.port); // TODO: 3/1/17 change port to ip if using mininet
             }
         }

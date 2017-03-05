@@ -11,6 +11,7 @@ public class JsonHandler {
     private String type;
     private String line;
     private String relatedTld;
+    private String relatedAuthServer;
 
     public String parseCommand(String line) throws JSONException {
         this.line = line;
@@ -25,6 +26,14 @@ public class JsonHandler {
         String[] args = domain.split("\\.");
         relatedTld = args[args.length - 1];
         return relatedTld;
+    }
+
+    public String getRelatedAuthServer() throws JSONException {
+        String domain = reqObject.getString("domain");
+        String[] args = domain.split("\\.");
+        relatedAuthServer = args[args.length - 2] + "." + args[args.length - 1];
+        System.out.println("Related AuthServerName: " + relatedAuthServer);
+        return relatedAuthServer;
     }
 
     public String getDomain() throws JSONException {

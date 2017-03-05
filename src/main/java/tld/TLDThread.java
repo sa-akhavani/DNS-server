@@ -12,18 +12,19 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Objects;
 
 /**
  * Created by ali on 3/1/17.
  */
 public class TLDThread extends Thread {
-    private ArrayList<Server> websites;
+    private ArrayList<Server> authServers;
     private Socket socket;
     private JsonHandler jsonHandler;
 
-    public TLDThread(Socket clientSocket, ArrayList<Server> websites) {
+    public TLDThread(Socket clientSocket, ArrayList<Server> authServers) {
         this.socket = clientSocket;
-        this.websites = websites;
+        this.authServers = authServers;
         jsonHandler = new JsonHandler();
     }
 
@@ -34,18 +35,24 @@ public class TLDThread extends Thread {
             try {
                 BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 while ((line = br.readLine()) != null) {
-                    System.out.println(line);
                     String type = jsonHandler.parseCommand(line);
+                    System.out.println("searchType: " + jsonHandler.getSearchType());
+                    System.out.println(line);
                     switch (type) {
                         case "search":
                             System.out.println("Search!");
-                            String siteName = jsonHandler.getDomain();
-                            String websiteIP = findWebsiteIP(siteName);
-                            if (websiteIP == null) {
-                                sendResultToAgent(new Response("", true, false).getRespObject());
+                            String authServerName = jsonHandler.getRelatedAuthServer();
+                            String authServerIp = findRelatedAuthServer(authServerName);
+                            System.out.println("authIp:" + authServerIp);
+                            if (authServerIp == null) {
+                                sendResultToAgent(new Response("", true, false, 0).getRespObject());
+                            } else if (jsonHandler.getSearchType().equals("iterative")) {
+                                System.out.println(authServerIp);
+                                sendResultToAgent(new Response(authServerIp, false, true, 0).getRespObject());
                             } else {
-                                System.out.println("sending back ip" + websiteIP);
-                                sendResultToAgent(new Response(websiteIP, true, true).getRespObject());
+                                JSONObject domainIp = askAuthServerForDomainIp(authServerIp, line); //maybe null
+                                System.out.println("domain name:" + domainIp.toString());
+                                sendResultToAgent(domainIp);
                             }
 
                             break;
@@ -68,20 +75,30 @@ public class TLDThread extends Thread {
         System.out.println("Thread Ended!");
     }
 
-    private String findWebsiteIP(String serverName) {
-        for (Server s :
-                websites) {
-            System.out.println(s.name);
-            if (s.name.equals(serverName)) {
-                return s.ip;
-            }
-        }
-        return null;
-    }
-
     private void sendResultToAgent(JSONObject j) throws IOException {
         Transceiver t = new Transceiver(this.socket);
         t.send(j.toString() + '\n');
+    }
+
+    private JSONObject askAuthServerForDomainIp(String authServerPort, String message) throws IOException {
+        Transceiver t = new Transceiver("localhost" , Integer.parseInt(authServerPort));
+        t.send(message + '\n');
+        try {
+            return new JSONObject(t.receive());
+        } catch (JSONException e) {
+            return null;
+        }
+    }
+
+    private String findRelatedAuthServer(String authServerName) {
+        for (Server s :
+                authServers) {
+            System.out.println("finding: " + authServerName + " this time: " + s.name) ;
+            if (Objects.equals(s.name, authServerName)) {
+                return Integer.toString(Integer.parseInt(s.ip)); // TODO: 3/1/17 change port to ip if using mininet
+            }
+        }
+        return null;
     }
 
 }
