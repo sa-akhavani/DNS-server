@@ -11,16 +11,24 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.List;
 
 public class AuthThread extends Thread {
     private ArrayList<Server> websites;
     private Socket socket;
     private JsonHandler jsonHandler;
+    private String fileName;
 
-    public AuthThread(Socket clientSocket, ArrayList<Server> websites) {
+    public AuthThread(Socket clientSocket, ArrayList<Server> websites, String fileName) {
         this.socket = clientSocket;
         this.websites = websites;
+        this.fileName = fileName;
         jsonHandler = new JsonHandler();
     }
 
@@ -73,13 +81,13 @@ public class AuthThread extends Thread {
     }
 
     private JSONObject add(JsonHandler jsonHandler) throws JSONException, IOException {
-        if(addWebsite(jsonHandler.getDomain(), jsonHandler.getIP()))
+        if(addWebsite(jsonHandler.getDomain(), jsonHandler.getIP(), jsonHandler.getValidTime()))
             return new Response("Success", true, true, 0).getRespObject();
         else
             return new Response("Error", true, false, 0).getRespObject();
     }
 
-    private JSONObject update(JsonHandler jsonHandler) throws JSONException {
+    private JSONObject update(JsonHandler jsonHandler) throws JSONException, IOException {
         if(updateWebsite(jsonHandler.getDomain(), jsonHandler.getIP()))
             return new Response("Success", true, true, 0).getRespObject();
         else
@@ -93,23 +101,48 @@ public class AuthThread extends Thread {
         }
         return false;
     }
-    private boolean addWebsite(String domain, String ip) {
+    private boolean addWebsite(String domain, String ip, int validTime) {
         if(contains(domain))
             return false;
 
-        websites.add(new Server(domain, ip, 0, 50));
+        websites.add(new Server(domain, ip, 0, validTime));
+        appendFile('\n' + domain + " " + ip +" " + validTime);
         return true;
     }
 
-    private boolean updateWebsite(String domain, String ip) {
+    private void appendFile(String newLine) {
+        System.out.println("appending o to file: " + fileName + " newLine: " + newLine);
+        try {
+            Files.write(Paths.get(fileName), newLine.getBytes(), StandardOpenOption.APPEND);
+        }catch (IOException e) {
+            //exception handling left as an exercise for the reader
+        }
+    }
+
+    private boolean updateWebsite(String domain, String ip) throws IOException {
         for (Server s: websites) {
             if(s.name.equals(domain)) {
                 s.ip = ip;
+                changeFileLine(s.name, s.name + " " + s.ip + " " + s.validTime);
                 return true;
             }
         }
-
         return false;
+    }
+    
+
+    private void changeFileLine(String oldLine, String newLine) throws IOException {
+        Path filePath = Paths.get(fileName);
+        List<String> fileContent = new ArrayList<>(Files.readAllLines(filePath, StandardCharsets.UTF_8));
+
+        for (int i = 0; i < fileContent.size(); i++) {
+            if (fileContent.get(i).contains(oldLine)) {
+                fileContent.set(i, newLine);
+                break;
+            }
+        }
+
+        Files.write(filePath, fileContent, StandardCharsets.UTF_8);
     }
 
     private Server findWebsite(String serverName) {

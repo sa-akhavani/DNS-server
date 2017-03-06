@@ -30,7 +30,7 @@ public class AuthMain {
         while (true) {
             Socket clientSocket = myServer.accept();
             System.out.println("new connection");
-            AuthThread rt = new AuthThread(clientSocket, websites);
+            AuthThread rt = new AuthThread(clientSocket, websites, "./resources/root1.tld." + fileName);
             rt.start();
         }
     }

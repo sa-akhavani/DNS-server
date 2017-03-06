@@ -12,6 +12,7 @@ public class RequestHandler {
     private String request;
     private String type;
     private String ip;
+    private int validTime;
 
 
     public String getRequest() {
@@ -20,6 +21,10 @@ public class RequestHandler {
 
     public String getType() {
         return type;
+    }
+
+    public int getValidTime() {
+        return validTime;
     }
 
     public void setType(String type) {
@@ -38,15 +43,17 @@ public class RequestHandler {
         this.request = line;
         String[] args = request.split("\\s");
 
-        if (args[0].equals("a") && args.length == 3) {
+        if (args[0].equals("a") && args.length == 4) {
             this.type = "add";
             this.request = args[1];
             this.ip = args[2];
+            this.validTime = Integer.parseInt(args[3]);
             return "add";
-        } else if (args[0].equals("u") && args.length == 3) {
+        } else if (args[0].equals("u") && args.length == 4) {
             this.type = "update";
             this.request = args[1];
             this.ip = args[2];
+            this.validTime = Integer.parseInt(args[3]);
             return "update";
         } else if (args[0].equals("s") && args.length == 3) {
             this.type = "search";
@@ -89,6 +96,7 @@ public class RequestHandler {
         jo.put("domain", request);
         jo.put("ip" , ip);
         jo.put("type", "add");
+        jo.put("validTime", validTime);
         return jo;
     }
 
@@ -97,6 +105,7 @@ public class RequestHandler {
         jo.put("domain", request);
         jo.put("ip" , ip);
         jo.put("type", "update");
+        jo.put("validTime", validTime);
         return jo;
     }
 }

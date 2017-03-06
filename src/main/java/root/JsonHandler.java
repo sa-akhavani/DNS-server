@@ -51,4 +51,8 @@ public class JsonHandler {
     public String getFullMessage() {
         return line;
     }
+
+    public int getValidTime() throws JSONException {
+        return Integer.parseInt(reqObject.getString("validTime"));
+    }
 }
