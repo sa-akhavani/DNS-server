@@ -33,38 +33,66 @@ public class UserThread extends Thread {
     public void run() {
         System.out.println("New Thread!");
         String line;
+
         while (true) {
             try {
                 BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 while ((line = br.readLine()) != null) {
-
+                    Response response = null;
                     String type = reqHandler.parseType(line);
                     switch (type) {
                         case "search":
-                            Response response = handleSearch(reqHandler);
-                            sendResultToUser(response);
+                            response = search(reqHandler);
                             System.out.println(response);
                             break;
                         case "add":
-                            System.out.println("Add");
+                            response = add(reqHandler);
                             break;
                         case "update":
-                            System.out.println("Update");
+                            response = update(reqHandler);
                             break;
                         case "wrong":
                             System.out.println("Bad Input");
                             break;
                     }
+                    if(response != null)
+                        sendResultToUser(response);
                 }
             } catch (IOException | JSONException e) {
                 e.printStackTrace();
             }
             break;
         }
-        System.out.println("Thread Ended!");
     }
 
-    private Response handleSearch(RequestHandler req) throws IOException, JSONException {
+    private Response update(RequestHandler reqHandler) throws JSONException, IOException {
+        Response r = null;
+        JSONObject jo = reqHandler.createUpdateJson();
+        for (Server root: roots) {
+            r =  sendRequest(jo, root.port);
+            if(r != null && r.isFinal())
+                break;
+        }
+
+        serverRepository.remove(reqHandler.getRequest());
+        return r;
+    }
+
+    private Response add(RequestHandler reqHandler) throws JSONException, IOException {
+        Response r = null;
+        System.out.println("ip: " + reqHandler.getIp() + " request type: " + reqHandler.getType() + " request Body: " + reqHandler.getRequest());
+        JSONObject jo = reqHandler.createAddJson();
+        for (Server root: roots) {
+            r =  sendRequest(jo, root.port);
+            if(r != null && r.isFinal())
+                break;
+        }
+
+        return r;
+    }
+
+
+    private Response search(RequestHandler req) throws IOException, JSONException {
         Response r = checkCatchedRepository(req);
         if(r != null)
             return r;
@@ -74,7 +102,7 @@ public class UserThread extends Thread {
             if(reqHandler.getSearchType().equals("iterative"))
                 r = iterativeSearch(jo, root.port);
             else
-                r =  defaultSearch(jo, root.port);
+                r =  sendRequest(jo, root.port);
 
             if(r != null && r.isFinal())
                 break;
@@ -93,8 +121,8 @@ public class UserThread extends Thread {
             return null;
     }
 
-    private Response defaultSearch(JSONObject jo , int port) throws IOException {
-        System.out.println("recursive search!!!");
+    private Response sendRequest(JSONObject jo , int port) throws IOException {
+        System.out.println("sendRequest!!!");
         String response = "";
         Transceiver agent = new Transceiver("localhost", port);
         agent.send(jo.toString() + '\n');
@@ -111,7 +139,7 @@ public class UserThread extends Thread {
     private Response iterativeSearch(JSONObject jo , int port) throws IOException, JSONException {
         System.out.println("iterative search!!!");
         String response = "";
-        Response resp = defaultSearch(jo, port);
+        Response resp = sendRequest(jo, port);
 
         if(resp != null) {
             if(!resp.isFinal()) {
@@ -126,7 +154,9 @@ public class UserThread extends Thread {
 
     private void sendResultToUser(Response response) throws IOException {
         Transceiver t = new Transceiver(this.socket);
-        if(response.isFound())
+        if(response == null)
+            t.send("Error!\n");
+        else if(response.isFound())
             t.send(response.getResponse() + '\n');
         else
             t.send("Not Found!\n");

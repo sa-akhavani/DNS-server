@@ -10,7 +10,6 @@ import java.util.ArrayList;
  */
 public class ServerRepository {
     private ArrayList<Server> storage;
-    final static Logger logger = Logger.getLogger(ServerRepository.class);
 
     private static ServerRepository serverRepository = new ServerRepository();
 
@@ -57,4 +56,9 @@ public class ServerRepository {
             return true;
     }
 
+    public void remove(String request) {
+        Server s = get(request);
+        if(s != null)
+            storage.remove(s);
+    }
 }

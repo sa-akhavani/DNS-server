@@ -36,36 +36,27 @@ public class TLDThread extends Thread {
                 BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 while ((line = br.readLine()) != null) {
                     String type = jsonHandler.parseCommand(line);
-                    System.out.println("searchType: " + jsonHandler.getSearchType());
+                    JSONObject response = null;
                     System.out.println(line);
                     switch (type) {
                         case "search":
                             System.out.println("Search!");
-                            String authServerName = jsonHandler.getRelatedAuthServer();
-                            String authServerIp = findRelatedAuthServer(authServerName);
-                            System.out.println("authIp:" + authServerIp);
-                            if (authServerIp == null) {
-                                sendResultToAgent(new Response("", true, false, 0).getRespObject());
-                            } else if (jsonHandler.getSearchType().equals("iterative")) {
-                                System.out.println(authServerIp);
-                                sendResultToAgent(new Response(authServerIp, false, true, 0).getRespObject());
-                            } else {
-                                JSONObject domainIp = askAuthServerForDomainIp(authServerIp, line); //maybe null
-                                System.out.println("domain name:" + domainIp.toString());
-                                sendResultToAgent(domainIp);
-                            }
-
+                            response = search(jsonHandler);
                             break;
                         case "add":
                             System.out.println("Add");
+                            response = add(jsonHandler);
                             break;
                         case "update":
                             System.out.println("Update");
+                            response = add(jsonHandler);
                             break;
                         case "wrong":
                             System.out.println("Bad Input");
                             break;
                     }
+                    if(response != null)
+                        sendResultToAgent(response);
                 }
             } catch (IOException | JSONException e) {
                 e.printStackTrace();
@@ -75,12 +66,32 @@ public class TLDThread extends Thread {
         System.out.println("Thread Ended!");
     }
 
+    private JSONObject search(JsonHandler jsonHandler) throws JSONException, IOException {
+        String tldIp = findRelatedAuthServer(jsonHandler.getRelatedAuthServer());
+        if (tldIp == null) {
+            return new Response(" ", true, false, 0).getRespObject();
+        } else if (jsonHandler.getSearchType().equals("iterative")) {
+            return new Response(tldIp, false, true, 0).getRespObject();
+        } else {
+            return forwardMessage(tldIp, jsonHandler.getFullMessage()); //maybe null
+        }
+    }
+
+    private JSONObject add(JsonHandler jsonHandler) throws JSONException, IOException {
+        String tldIp = findRelatedAuthServer(jsonHandler.getRelatedAuthServer());
+        if (tldIp == null) {
+            return new Response("Error", true, false, 0).getRespObject();
+        }  else {
+            return forwardMessage(tldIp, jsonHandler.getFullMessage());
+        }
+    }
+
     private void sendResultToAgent(JSONObject j) throws IOException {
         Transceiver t = new Transceiver(this.socket);
         t.send(j.toString() + '\n');
     }
 
-    private JSONObject askAuthServerForDomainIp(String authServerPort, String message) throws IOException {
+    private JSONObject forwardMessage(String authServerPort, String message) throws IOException {
         Transceiver t = new Transceiver("localhost" , Integer.parseInt(authServerPort));
         t.send(message + '\n');
         try {

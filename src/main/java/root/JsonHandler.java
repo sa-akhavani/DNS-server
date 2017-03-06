@@ -43,4 +43,12 @@ public class JsonHandler {
     public String getSearchType() throws JSONException {
         return reqObject.getString("searchType");
     }
+
+    public String getIP() throws JSONException {
+        return reqObject.getString("ip");
+    }
+
+    public String getFullMessage() {
+        return line;
+    }
 }

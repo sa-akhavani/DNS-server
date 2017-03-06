@@ -35,34 +35,23 @@ public class RootThread extends Thread {
                 BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 while ((line = br.readLine()) != null) {
                     String type = jsonHandler.parseCommand(line);
-                    System.out.println("searchType: " + jsonHandler.getSearchType());
+                    JSONObject response = null;
                     switch (type) {
                         case "search":
-                            System.out.println("Search!");
-                            String tldName = jsonHandler.getRelatedTld();
-                            String tldIp = findRelatedTld(tldName);
-                            if (tldIp == null) {
-                                sendResultToAgent(new Response("", true, false, 0).getRespObject());
-                            } else if (jsonHandler.getSearchType().equals("iterative")) {
-                                System.out.println(tldIp);
-                                sendResultToAgent(new Response(tldIp, false, true, 0).getRespObject());
-                            } else {
-                                JSONObject domainIp = askTldForDomainIp(tldIp, line); //maybe null
-                                System.out.println("domain name:" + domainIp.toString());
-                                sendResultToAgent(domainIp);
-                            }
-
+                            response = search(jsonHandler);
                             break;
                         case "add":
-                            System.out.println("Add");
+                            response = add(jsonHandler);
                             break;
                         case "update":
-                            System.out.println("Update");
+                            response = add(jsonHandler);
                             break;
                         case "wrong":
                             System.out.println("Bad Input");
                             break;
                     }
+                    if(response != null)
+                        sendResultToAgent(response);
                 }
             } catch (IOException | JSONException e) {
                 e.printStackTrace();
@@ -72,12 +61,42 @@ public class RootThread extends Thread {
         System.out.println("Thread Ended!");
     }
 
-    private void sendResultToAgent(JSONObject agentIP) throws IOException {
-        Transceiver t = new Transceiver(this.socket);
-        t.send(agentIP.toString() + '\n');
+    private JSONObject search(JsonHandler jsonHandler) throws JSONException, IOException {
+        String tldName = jsonHandler.getRelatedTld();
+        String tldIp = findRelatedTld(tldName);
+        if (tldIp == null) {
+           return new Response("", true, false, 0).getRespObject();
+        } else if (jsonHandler.getSearchType().equals("iterative")) {
+            return new Response(tldIp, false, true, 0).getRespObject();
+        } else {
+            return forwardMessage(tldIp, jsonHandler.getFullMessage()); //maybe null
+        }
     }
 
-    private JSONObject askTldForDomainIp(String tldPort, String message) throws IOException {
+    private JSONObject add(JsonHandler jsonHandler) throws JSONException, IOException {
+        String tldIp = findRelatedTld(jsonHandler.getRelatedTld());
+        if (tldIp == null) {
+            return new Response("", true, false, 0).getRespObject();
+        }  else {
+            return forwardMessage(tldIp, jsonHandler.getFullMessage());
+        }
+    }
+
+    private JSONObject update(JsonHandler jsonHandler) throws JSONException, IOException {
+        String tldIp = findRelatedTld(jsonHandler.getRelatedTld());
+        if (tldIp == null) {
+            return new Response("Error", true, false, 0).getRespObject();
+        }  else {
+            return forwardMessage(tldIp, jsonHandler.getFullMessage());
+        }
+    }
+
+    private void sendResultToAgent(JSONObject result) throws IOException {
+        Transceiver t = new Transceiver(this.socket);
+        t.send(result.toString() + '\n');
+    }
+
+    private JSONObject forwardMessage(String tldPort, String message) throws IOException {
         Transceiver t = new Transceiver("localhost" , Integer.parseInt(tldPort));
         t.send(message + '\n');
         try {

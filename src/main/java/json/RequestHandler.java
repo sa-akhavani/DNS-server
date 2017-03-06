@@ -11,6 +11,7 @@ public class RequestHandler {
     private String searchType;
     private String request;
     private String type;
+    private String ip;
 
 
     public String getRequest() {
@@ -25,6 +26,10 @@ public class RequestHandler {
         this.type = type;
     }
 
+    public String getIp() {
+        return ip;
+    }
+
     public String getSearchType() {
         return searchType;
     }
@@ -33,15 +38,19 @@ public class RequestHandler {
         this.request = line;
         String[] args = request.split("\\s");
 
-        if (args[0].equals("add")) {
-            type = "add";
+        if (args[0].equals("a") && args.length == 3) {
+            this.type = "add";
+            this.request = args[1];
+            this.ip = args[2];
             return "add";
-        } else if (args[0].equals("update")) {
-            type = "update";
+        } else if (args[0].equals("u") && args.length == 3) {
+            this.type = "update";
+            this.request = args[1];
+            this.ip = args[2];
             return "update";
-        } else if (args[0].equals("search") && args.length == 3) {
-            type = "search";
-            searchType = args[2];
+        } else if (args[0].equals("s") && args.length == 3) {
+            this.type = "search";
+            this.searchType = args[2];
             this.request = args[1];
             return "search";
         }
@@ -73,5 +82,21 @@ public class RequestHandler {
         else if (hour > 19 && hour <= 0)
             hourType = "night";
         return hourType;
+    }
+
+    public JSONObject createAddJson() throws JSONException {
+        JSONObject jo = new JSONObject();
+        jo.put("domain", request);
+        jo.put("ip" , ip);
+        jo.put("type", "add");
+        return jo;
+    }
+
+    public JSONObject createUpdateJson() throws JSONException {
+        JSONObject jo = new JSONObject();
+        jo.put("domain", request);
+        jo.put("ip" , ip);
+        jo.put("type", "update");
+        return jo;
     }
 }
