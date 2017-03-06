@@ -22,6 +22,8 @@ public class TLDMain {
 
         ServerSocket myServer = new ServerSocket(port);
         configTLD("./resources/root1.tld." + fileName, websites);
+
+        System.out.println("tld " + fileName + " started");
         while (true) {
             Socket clientSocket = myServer.accept();
             System.out.println("new connection");

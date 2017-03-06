@@ -18,6 +18,9 @@ public class Main {
         ServerSocket myServer = new ServerSocket(12345);
         configAgent("./resources/root-servers", roots);
 
+
+        System.out.println("agent started");
+
         while (true) {
             Socket clientSocket = myServer.accept();
             UserThread ut = new UserThread(clientSocket, roots);

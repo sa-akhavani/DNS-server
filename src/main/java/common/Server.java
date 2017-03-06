@@ -35,4 +35,8 @@ public class Server {
     public void setExpirationTime() {
         this.expirationTime = System.currentTimeMillis() + validTime*1000;
     }
+
+    public long getRemainingTime() {
+        return (this.expirationTime - System.currentTimeMillis()) / 1000;
+    }
 }

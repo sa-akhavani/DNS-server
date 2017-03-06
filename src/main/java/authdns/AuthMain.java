@@ -26,6 +26,7 @@ public class AuthMain {
         ServerSocket myServer = new ServerSocket(port);
         configAuth("./resources/root1.tld." + fileName, websites);
 
+        System.out.println("auth " + fileName + " started");
         while (true) {
             Socket clientSocket = myServer.accept();
             System.out.println("new connection");

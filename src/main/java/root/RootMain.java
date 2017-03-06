@@ -18,6 +18,7 @@ public class RootMain {
         ServerSocket myServer = new ServerSocket(12340);
         configAgent("./resources/root1.tlds", tlds);
 
+        System.out.println("root1 started");
         while (true) {
             Socket clientSocket = myServer.accept();
             RootThread rt = new RootThread(clientSocket, tlds);

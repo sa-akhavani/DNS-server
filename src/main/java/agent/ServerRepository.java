@@ -25,14 +25,12 @@ public class ServerRepository {
     public void store(Server s) {
         s.setExpirationTime();
         storage.add(s);
-        if (logger.isDebugEnabled()) {
-            logger.debug("Reserve Record Added -> " + s.name);
-        }
+        System.out.println("server " + s.name + " stored.");
     }
 
     public boolean contains(String websiteName) {
         for (Server s : storage)
-            if (s.name == websiteName)
+            if (s.name.equals(websiteName))
                 return checkValid(s);
 
         return false;
@@ -40,9 +38,11 @@ public class ServerRepository {
 
     public Server get(String websiteName) {
         for (Server s : storage)
-            if (s.name == websiteName)
-                if (checkValid(s))
+            if (s.name.equals(websiteName))
+                if (checkValid(s)){
+                    System.out.println(s.name + " is catched - remaining time: " + s.getRemainingTime());
                     return s;
+                }
                 else
                     return null;
 
