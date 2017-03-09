@@ -11,8 +11,9 @@ public class JsonHandler {
     private String type;
     private String line;
     private String relatedTld;
+    private String relatedAuthServer;
 
-    String parseCommand(String line) throws JSONException {
+    public String parseCommand(String line) throws JSONException {
         this.line = line;
         this.reqObject = new JSONObject(line);
         this.type = reqObject.getString("type");
@@ -20,10 +21,38 @@ public class JsonHandler {
         return type;
     }
 
-    String getRelatedTld() throws JSONException {
+    public String getRelatedTld() throws JSONException {
         String domain = reqObject.getString("domain");
         String[] args = domain.split("\\.");
         relatedTld = args[args.length - 1];
         return relatedTld;
+    }
+
+    public String getRelatedAuthServer() throws JSONException {
+        String domain = reqObject.getString("domain");
+        String[] args = domain.split("\\.");
+        relatedAuthServer = args[args.length - 2] + "." + args[args.length - 1];
+        System.out.println("Related AuthServerName: " + relatedAuthServer);
+        return relatedAuthServer;
+    }
+
+    public String getDomain() throws JSONException {
+        return reqObject.getString("domain");
+    }
+
+    public String getSearchType() throws JSONException {
+        return reqObject.getString("searchType");
+    }
+
+    public String getIP() throws JSONException {
+        return reqObject.getString("ip");
+    }
+
+    public String getFullMessage() {
+        return line;
+    }
+
+    public int getValidTime() throws JSONException {
+        return Integer.parseInt(reqObject.getString("validTime"));
     }
 }

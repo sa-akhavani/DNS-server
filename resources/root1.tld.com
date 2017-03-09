@@ -1,2 +1,2 @@
-google.com 100.200.300.400
-bing.com 200.300.400.500
+google.com 30001
+bing.com 30002
